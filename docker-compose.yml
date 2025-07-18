@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15
+    container_name: ecc-mfa
+    environment:
+      POSTGRES_DB: ecc_mfa
+      POSTGRES_USER: hao
+      POSTGRES_PASSWORD: your_password_here
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ecc-mfa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hao -d ecc_mfa"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:latest
+    container_name: ecc-mfa-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ecc-mfa-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Service
+  backend:
+    build: ./backend
+    container_name: ecc-mfa-backend
+    environment:
+      - DATABASE_URL=postgresql://hao:your_password_here@postgres:5432/ecc_mfa
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=ksR7JN7OpEawQTHyqj3XFSFD1HGSteiNH6UU5kR5l94
+      - JWT_SECRET_KEY=WvDb62Ydcc0HHYybamH9VWs-SU2VAeV8wghF7XQ2deM
+      - CORS_ORIGINS=http://localhost:3000
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecc-mfa-network
+    volumes:
+      - ./backend:/app
+    restart: unless-stopped
+
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    container_name: ecc-mfa-frontend
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - ecc-mfa-network
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ecc-mfa-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: thenganhao3383@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: Suisui$&0322
+    ports:
+      - "8080:80"
+    networks:
+      - ecc-mfa-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  ecc-mfa-network:
+    driver: bridge

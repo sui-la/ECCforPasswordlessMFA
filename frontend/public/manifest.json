@@ -1,0 +1,13 @@
+{
+  "short_name": "ECC MFA",
+  "name": "ECC Passwordless Multi-Factor Authentication",
+  "description": "Secure passwordless authentication using ECC cryptography",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en"
+}
